@@ -102,44 +102,6 @@ def predict():
     except Exception as e:
         print("Prediction Error:", str(e))
         return jsonify({"error": str(e)})
-    try:
-        data = request.json
-
-        # Required fields
-        required_keys = [
-            'Temperature', 'Humidity', 'Moisture',
-            'Soil_Type', 'Crop_Type',
-            'Nitrogen', 'Potassium', 'Phosphorous'
-        ]
-
-        for key in required_keys:
-            if key not in data:
-                return jsonify({"error": f"Missing key: {key}"})
-
-        # ⚠️ MUST match training order
-        features = [
-            data['Temperature'],
-            data['Humidity'],
-            data['Moisture'],
-            data['Soil_Type'],
-            data['Crop_Type'],
-            data['Nitrogen'],
-            data['Potassium'],
-            data['Phosphorous']
-        ]
-
-        final_input = np.array([features])
-
-        prediction = model.predict(final_input)
-        fertilizer_name = encoder.inverse_transform(prediction)
-
-        return jsonify({
-            "recommended_fertilizer": str(fertilizer_name[0])
-        })
-
-    except Exception as e:
-        print("Prediction Error:", str(e))
-        return jsonify({"error": str(e)})
 
 # =========================
 # ▶️ RUN APP
