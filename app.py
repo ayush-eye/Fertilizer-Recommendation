@@ -82,7 +82,7 @@ def predict():
         import pandas as pd
 
         input_df = pd.DataFrame([{
-            "Temperature": data['Temperature'],
+            "Temparature": data['Temperature'],
             "Humidity": data['Humidity'],
             "Moisture": data['Moisture'],
             "Soil Type": data['Soil_Type'],
