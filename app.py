@@ -1,0 +1,101 @@
+from flask import Flask, request, jsonify
+import joblib
+import numpy as np
+import os
+import gdown
+
+app = Flask(__name__)
+
+# =========================
+# 📁 PATH SETUP
+# =========================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+MODEL_PATH = os.path.join(BASE_DIR, "fertilizer_rf_model.pkl")
+ENCODER_PATH = os.path.join(BASE_DIR, "fertilizer_label_encoder.pkl")
+
+# Google Drive file ID
+MODEL_URL = "https://drive.google.com/uc?id=1If5twYsCclomrvlmmII2NLkNIpx4TbyL"
+
+# =========================
+# # Download model
+if not os.path.exists(MODEL_PATH):
+    print("Downloading model... ⏳")
+    gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+
+# 🔥 VERIFY FILE EXISTS
+if not os.path.exists(MODEL_PATH):
+    raise Exception("Model download failed ❌")
+
+print("Model file exists ✅")
+
+# =========================
+# 📦 LOAD MODEL + ENCODER
+# =========================
+
+try:
+    model = joblib.load(MODEL_PATH)
+    encoder = joblib.load(ENCODER_PATH)
+    print("Model and Encoder Loaded Successfully ✅")
+except Exception as e:
+    print("Loading Error:", str(e))
+    raise e
+
+# =========================
+# 🌐 ROUTES
+# =========================
+
+@app.route('/')
+def home():
+    return "Fertilizer Recommendation API is running 🌱"
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        data = request.json
+
+        # Validate input
+        required_keys = [
+            'Temperature', 'Humidity', 'Moisture',
+            'Soil_Type', 'Crop_Type',
+            'Nitrogen', 'Potassium', 'Phosphorous'
+        ]
+
+        for key in required_keys:
+            if key not in data:
+                return jsonify({"error": f"Missing key: {key}"})
+
+        # Feature order (MUST match training)
+        features = [
+            data['Temperature'],
+            data['Humidity'],
+            data['Moisture'],
+            data['Soil_Type'],
+            data['Crop_Type'],
+            data['Nitrogen'],
+            data['Potassium'],
+            data['Phosphorous']
+        ]
+
+        final_input = np.array([features])
+
+        prediction = model.predict(final_input)
+
+        fertilizer_name = encoder.inverse_transform(prediction)
+
+        return jsonify({
+            "recommended_fertilizer": str(fertilizer_name[0])
+        })
+
+    except Exception as e:
+        print("Prediction Error:", str(e))
+        return jsonify({"error": str(e)})
+
+# =========================
+# ▶️ RUN APP
+# =========================
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
