@@ -69,6 +69,42 @@ def predict():
     try:
         data = request.json
 
+        required_keys = [
+            'Temperature', 'Humidity', 'Moisture',
+            'Soil_Type', 'Crop_Type',
+            'Nitrogen', 'Potassium', 'Phosphorous'
+        ]
+
+        for key in required_keys:
+            if key not in data:
+                return jsonify({"error": f"Missing key: {key}"})
+
+        import pandas as pd
+
+        input_df = pd.DataFrame([{
+            "Temperature": data['Temperature'],
+            "Humidity": data['Humidity'],
+            "Moisture": data['Moisture'],
+            "Soil Type": data['Soil_Type'],
+            "Crop Type": data['Crop_Type'],
+            "Nitrogen": data['Nitrogen'],
+            "Potassium": data['Potassium'],
+            "Phosphorous": data['Phosphorous']
+        }])
+
+        prediction = model.predict(input_df)
+        fertilizer_name = encoder.inverse_transform(prediction)
+
+        return jsonify({
+            "recommended_fertilizer": str(fertilizer_name[0])
+        })
+
+    except Exception as e:
+        print("Prediction Error:", str(e))
+        return jsonify({"error": str(e)})
+    try:
+        data = request.json
+
         # Required fields
         required_keys = [
             'Temperature', 'Humidity', 'Moisture',
